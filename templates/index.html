@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Cracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Password Cracker</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#crack">Crack Password</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#clients">Client Management</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#settings">Settings</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Crack Password Section -->
+        <div id="crack">
+            <h2>Crack Password</h2>
+            <form id="crackForm">
+                <div class="mb-3">
+                    <label for="hash" class="form-label">Hash:</label>
+                    <input type="text" class="form-control" id="hash" required>
+                </div>
+                <div class="mb-3">
+                    <label for="hash_type" class="form-label">Hash Type:</label>
+                    <select class="form-select" id="hash_type">
+                        <option value="auto">Auto Detect</option>
+                        <option value="md5">MD5</option>
+                        <option value="sha1">SHA1</option>
+                        <option value="sha256">SHA256</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="attack_mode" class="form-label">Attack Mode:</label>
+                    <select class="form-select" id="attack_mode">
+                        <option value="0">Dictionary Attack</option>
+                        <option value="1">Brute Force</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="wordlist" class="form-label">Wordlist:</label>
+                    <input type="text" class="form-control" id="wordlist">
+                </div>
+                <button type="submit" class="btn btn-primary">Start Cracking</button>
+            </form>
+            <div id="result" class="mt-4"></div>
+        </div>
+
+        <!-- Client Management Section -->
+        <div id="clients" class="mt-4">
+            <h2>Client Management</h2>
+            <button id="scanNetwork" class="btn btn-info mb-3">Scan Network for Clients</button>
+            <div id="autoScanResults" class="mb-3"></div>
+            <form id="addClientForm">
+                <div class="mb-3">
+                    <label for="client_ip" class="form-label">Client IP:</label>
+                    <input type="text" class="form-control" id="client_ip" required>
+                </div>
+                <button type="submit" class="btn btn-success">Add Client</button>
+            </form>
+            <div id="clientList" class="mt-4"></div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings" class="mt-4">
+            <h2>Settings</h2>
+            <form id="settingsForm">
+                <div class="mb-3">
+                    <label for="default_wordlist" class="form-label">Default Wordlist:</label>
+                    <input type="text" class="form-control" id="default_wordlist">
+                </div>
+                <div class="mb-3">
+                    <label for="default_hash_type" class="form-label">Default Hash Type:</label>
+                    <select class="form-select" id="default_hash_type">
+                        <option value="auto">Auto Detect</option>
+                        <option value="md5">MD5</option>
+                        <option value="sha1">SHA1</option>
+                        <option value="sha256">SHA256</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="default_attack_mode" class="form-label">Default Attack Mode:</label>
+                    <select class="form-select" id="default_attack_mode">
+                        <option value="0">Dictionary Attack</option>
+                        <option value="1">Brute Force</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="client_timeout" class="form-label">Client Timeout (seconds):</label>
+                    <input type="number" class="form-control" id="client_timeout">
+                </div>
+                <button type="submit" class="btn btn-warning">Update Settings</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // JavaScript for form submission and real-time updates
+        document.getElementById('crackForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/crack', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            document.getElementById('result').innerText = result.message || result.error;
+        });
+
+        document.getElementById('addClientForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/add_client', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            alert(result.message || result.error);
+        });
+
+        document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/update_settings', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            alert(result.message || result.error);
+        });
+
+        document.getElementById('scanNetwork').addEventListener('click', async () => {
+            const response = await fetch('/scan_network');
+            const result = await response.json();
+            const autoScanResults = document.getElementById('autoScanResults');
+            autoScanResults.innerHTML = result.message || result.error;
+
+            // Update the client list
+            const clientList = document.getElementById('clientList');
+            clientList.innerHTML = Object.keys(result.clients || {}).map(ip => `
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <h5 class="card-title">${ip}</h5>
+                        <p class="card-text">Status: ${result.clients[ip].status}</p>
+                    </div>
+                </div>
+            `).join('');
+        });
+    </script>
+</body>
+</html>
